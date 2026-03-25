@@ -5,11 +5,11 @@ import { SkillMatrix } from './components/SkillMatrix';
 import { LiveOps } from './components/LiveOps';
 import { TheLab } from './components/TheLab';
 import { CommandPalette } from './components/CommandPalette';
-import { SyncProfileModal } from './components/SyncProfileModal';
+import { ManualProfileModal } from './components/ManualProfileModal';
 import { DeploymentRegistry } from './components/DeploymentRegistry';
 import { PROJECTS, SKILLS } from './constants';
-import { Terminal, FlaskConical, Radio, Command as CommandIcon, LayoutGrid, Github, Sun, Moon, ExternalLink, ShieldCheck } from 'lucide-react';
-import { Theme, GitHubProfile, RegisteredProject } from './types';
+import { Terminal, FlaskConical, Radio, Command as CommandIcon, LayoutGrid, Sun, Moon, ExternalLink, ShieldCheck, Edit3 } from 'lucide-react';
+import { Theme, ManualProfile, RegisteredProject } from './types';
 
 type View = 'builder' | 'live' | 'lab';
 
@@ -24,9 +24,14 @@ export default function App() {
     return (saved as Theme) || 'dark';
   });
 
-  const [githubProfile, setGithubProfile] = useState<GitHubProfile | null>(() => {
-    const saved = localStorage.getItem('github_profile');
-    return saved ? JSON.parse(saved) : null;
+  const [profile, setProfile] = useState<ManualProfile>(() => {
+    const saved = localStorage.getItem('manual_profile');
+    if (saved) return JSON.parse(saved);
+    
+    // Default skills from constants
+    const initialSkills: { [key: string]: number } = {};
+    SKILLS.forEach(s => initialSkills[s.name] = s.level);
+    return { skills: initialSkills };
   });
 
   const [registeredProjects, setRegisteredProjects] = useState<RegisteredProject[]>(() => {
@@ -35,7 +40,7 @@ export default function App() {
   });
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('current_view', view);
@@ -51,10 +56,8 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (githubProfile) {
-      localStorage.setItem('github_profile', JSON.stringify(githubProfile));
-    }
-  }, [githubProfile]);
+    localStorage.setItem('manual_profile', JSON.stringify(profile));
+  }, [profile]);
 
   useEffect(() => {
     localStorage.setItem('registered_projects', JSON.stringify(registeredProjects));
@@ -81,10 +84,11 @@ export default function App() {
         onSelect={handleCommand}
       />
 
-      <SyncProfileModal 
-        isOpen={isSyncModalOpen} 
-        onClose={() => setIsSyncModalOpen(false)} 
-        onSync={setGithubProfile} 
+      <ManualProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        profile={profile}
+        onUpdate={setProfile} 
       />
 
       {/* Navigation Bar */}
@@ -96,7 +100,7 @@ export default function App() {
                 <Terminal className="text-black" size={18} />
               </div>
               <span className="font-mono text-xs tracking-widest text-ink uppercase font-bold hidden md:block">
-                Position Pulse <span className="text-accent">v3.2</span>
+                Position Pulse <span className="text-accent">v3.3</span>
               </span>
             </div>
 
@@ -137,15 +141,11 @@ export default function App() {
             </button>
 
             <button 
-              onClick={() => setIsSyncModalOpen(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-xs font-mono ${
-                githubProfile 
-                  ? 'bg-accent/10 border-accent/30 text-accent' 
-                  : 'bg-white/5 border-white/5 text-zinc-500 hover:text-white hover:border-accent/30'
-              }`}
+              onClick={() => setIsProfileModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-accent/10 border-accent/30 text-accent transition-all text-xs font-mono hover:bg-accent/20"
             >
-              <Github size={16} />
-              {githubProfile ? `@${githubProfile.username}` : 'SYNC PROFILE'}
+              <Edit3 size={16} />
+              EDIT PROFILE
             </button>
 
             <button 
@@ -173,9 +173,9 @@ export default function App() {
               className="space-y-16"
             >
               <div className="max-w-3xl">
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 leading-[0.9] text-ink uppercase italic">
-                  PROOF OF <br />
-                  <span className="text-accent">WORK.</span>
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 leading-[0.9] text-ink uppercase">
+                  PROJECT <br />
+                  <span className="text-accent">REGISTRY.</span>
                 </h1>
                 <p className="text-zinc-500 text-lg leading-relaxed font-mono uppercase tracking-tight">
                   High-performance developer dashboard for builders navigating the next wave of infrastructure.
@@ -195,7 +195,6 @@ export default function App() {
                       <ProjectCard 
                         key={project.id} 
                         project={project} 
-                        profile={githubProfile}
                         isActive={registeredProjects.some(p => p.protocolId === project.id)}
                       />
                     ))}
@@ -203,21 +202,13 @@ export default function App() {
                 </div>
 
                 <div className="lg:col-span-4 space-y-12">
-                  <SkillMatrix skills={SKILLS} profile={githubProfile} />
+                  <SkillMatrix skills={SKILLS} profile={profile} />
                   
                   <div className="glass p-8 rounded-2xl border-white/5 space-y-6">
                     <h3 className="text-sm font-mono uppercase text-zinc-500 flex items-center gap-2">
-                      <ShieldCheck size={16} className="text-accent" /> PoW Verification
+                      <ShieldCheck size={16} className="text-accent" /> System Metrics
                     </h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
-                        <span className="text-xs font-mono text-zinc-400">GitHub Sync</span>
-                        {githubProfile ? <span className="text-[10px] font-mono text-accent">ACTIVE</span> : <span className="text-[10px] font-mono text-zinc-600">PENDING</span>}
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
-                        <span className="text-xs font-mono text-zinc-400">Verified Repos</span>
-                        <span className="text-[10px] font-mono text-accent">{githubProfile?.repos.length || 0}</span>
-                      </div>
                       <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
                         <span className="text-xs font-mono text-zinc-400">Deployments</span>
                         <span className="text-[10px] font-mono text-accent">{registeredProjects.length}</span>
@@ -258,7 +249,7 @@ export default function App() {
       </div>
 
       {/* Terminal Status Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-status-bar-bg border-t border-white/5 h-8 flex items-center justify-between px-6">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-status-bar-bg border-t border-white/5 h-10 flex items-center justify-between px-6">
         <div className="flex items-center gap-6 text-[10px] font-mono uppercase tracking-widest">
           <div className="flex items-center gap-2 text-zinc-500">
             <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />

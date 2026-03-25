@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { FlaskConical, Table, Video, Plus, CheckCircle2, Circle, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useMotionValue } from 'motion/react';
+import { FlaskConical, Table, Video, Plus, CheckCircle2, Circle, Trash2, TrendingUp, BarChart3, ChevronRight } from 'lucide-react';
 import { AirdropInteraction, ContentHook } from '../types';
 
 export const TheLab: React.FC = () => {
   const [airdrops, setAirdrops] = useState<AirdropInteraction[]>(() => {
     const saved = localStorage.getItem('lab_airdrops');
     return saved ? JSON.parse(saved) : [
-      { id: '1', protocol: 'Nexus', status: 'Farming', lastInteraction: '2024-03-24' },
-      { id: '2', protocol: 'Arcium', status: 'Farming', lastInteraction: '2024-03-20' },
+      { id: '1', protocol: 'Nexus', status: 'Farming', lastInteraction: '2024-03-24', isDailyDone: false },
+      { id: '2', protocol: 'Arcium', status: 'Farming', lastInteraction: '2024-03-20', isDailyDone: false },
     ];
   });
 
@@ -25,6 +25,25 @@ export const TheLab: React.FC = () => {
     return saved ? parseInt(saved) : 65;
   });
 
+  // Daily reset logic
+  useEffect(() => {
+    const checkReset = () => {
+      const now = new Date();
+      const lastResetStr = localStorage.getItem('last_daily_reset');
+      const lastReset = lastResetStr ? new Date(lastResetStr) : new Date(0);
+
+      // If more than 24 hours have passed since last reset
+      if (now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000) {
+        setAirdrops(prev => prev.map(a => ({ ...a, isDailyDone: false })));
+        localStorage.setItem('last_daily_reset', now.toISOString());
+      }
+    };
+
+    checkReset();
+    const interval = setInterval(checkReset, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const saveAirdrops = (data: AirdropInteraction[]) => {
     setAirdrops(data);
     localStorage.setItem('lab_airdrops', JSON.stringify(data));
@@ -35,6 +54,10 @@ export const TheLab: React.FC = () => {
     localStorage.setItem('lab_hooks', JSON.stringify(data));
   };
 
+  useEffect(() => {
+    localStorage.setItem('whop_progress', whopProgress.toString());
+  }, [whopProgress]);
+
   const addAirdrop = () => {
     const name = prompt('Protocol Name?');
     if (!name) return;
@@ -42,9 +65,17 @@ export const TheLab: React.FC = () => {
       id: Date.now().toString(),
       protocol: name,
       status: 'Farming',
-      lastInteraction: new Date().toISOString().split('T')[0]
+      lastInteraction: new Date().toISOString().split('T')[0],
+      isDailyDone: false
     };
     saveAirdrops([newItem, ...airdrops]);
+  };
+
+  const toggleDaily = (id: string) => {
+    const updated = airdrops.map(a => 
+      a.id === id ? { ...a, isDailyDone: !a.isDailyDone, lastInteraction: new Date().toISOString().split('T')[0] } : a
+    );
+    saveAirdrops(updated);
   };
 
   const addHook = () => {
@@ -63,6 +94,16 @@ export const TheLab: React.FC = () => {
   const deleteAirdrop = (id: string) => saveAirdrops(airdrops.filter(a => a.id !== id));
   const deleteHook = (id: string) => saveHooks(hooks.filter(h => h.id !== id));
 
+  // Draggable logic for Whop bar
+  const constraintsRef = useRef(null);
+  const handleDrag = (_: any, info: any) => {
+    const container = constraintsRef.current as any;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const newProgress = Math.min(100, Math.max(0, Math.round((info.point.x - rect.left) / rect.width * 100)));
+    setWhopProgress(newProgress);
+  };
+
   return (
     <div className="space-y-12">
       <div className="flex items-center justify-between">
@@ -80,12 +121,23 @@ export const TheLab: React.FC = () => {
           </h3>
           <span className="text-xl font-bold text-accent">{whopProgress}%</span>
         </div>
-        <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-white/10">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${whopProgress}%` }}
-            className="h-full bg-accent rounded-full shadow-[0_0_15px_rgba(57,255,20,0.4)]"
-          />
+        <div className="relative pt-2 pb-2" ref={constraintsRef}>
+          <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-white/10 relative">
+            <motion.div 
+              animate={{ width: `${whopProgress}%` }}
+              className="h-full bg-accent rounded-full shadow-[0_0_15px_rgba(57,255,20,0.4)]"
+            />
+            {/* Draggable handle */}
+            <motion.div
+              drag="x"
+              dragConstraints={constraintsRef}
+              dragElastic={0}
+              dragMomentum={false}
+              onDrag={handleDrag}
+              className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border-2 border-accent cursor-grab active:cursor-grabbing z-10 shadow-xl"
+              style={{ left: `calc(${whopProgress}% - 12px)` }}
+            />
+          </div>
         </div>
         <div className="flex justify-between mt-4 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
           <span>Phase 1: Awareness</span>
@@ -101,15 +153,19 @@ export const TheLab: React.FC = () => {
             <h3 className="text-sm font-mono uppercase text-zinc-400 flex items-center gap-2">
               <Table size={14} className="text-accent" /> Airdrop Pipeline
             </h3>
-            <button onClick={addAirdrop} className="text-xs font-mono text-accent hover:text-white flex items-center gap-1 transition-colors">
-              <Plus size={12} /> ADD PROTOCOL
-            </button>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-mono text-zinc-600 uppercase">Daily Reset: 24h</span>
+              <button onClick={addAirdrop} className="text-xs font-mono text-accent hover:text-white flex items-center gap-1 transition-colors">
+                <Plus size={12} /> ADD PROTOCOL
+              </button>
+            </div>
           </div>
 
           <div className="glass rounded-2xl overflow-hidden border-white/5">
             <table className="w-full text-left text-sm">
               <thead className="bg-white/[0.02] border-b border-white/5">
                 <tr>
+                  <th className="p-4 font-mono text-[10px] text-zinc-500 uppercase">Daily</th>
                   <th className="p-4 font-mono text-[10px] text-zinc-500 uppercase">Protocol</th>
                   <th className="p-4 font-mono text-[10px] text-zinc-500 uppercase">Status</th>
                   <th className="p-4 font-mono text-[10px] text-zinc-500 uppercase">Last Interaction</th>
@@ -119,6 +175,14 @@ export const TheLab: React.FC = () => {
               <tbody className="divide-y divide-white/5">
                 {airdrops.map((item) => (
                   <tr key={item.id} className="hover:bg-white/[0.01] transition-colors group">
+                    <td className="p-4">
+                      <button 
+                        onClick={() => toggleDaily(item.id)}
+                        className={`transition-colors ${item.isDailyDone ? 'text-accent' : 'text-zinc-700 hover:text-zinc-500'}`}
+                      >
+                        {item.isDailyDone ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                      </button>
+                    </td>
                     <td className="p-4 font-bold text-white">{item.protocol}</td>
                     <td className="p-4">
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${

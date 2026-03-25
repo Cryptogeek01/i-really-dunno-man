@@ -1,11 +1,7 @@
 export type Theme = 'dark' | 'light';
 
-export interface GitHubProfile {
-  username: string;
-  avatarUrl?: string;
-  repos: any[];
-  languages: { [key: string]: number };
-  scannedAt: string;
+export interface ManualProfile {
+  skills: { [key: string]: number };
 }
 
 export interface RegisteredProject {
@@ -44,6 +40,8 @@ export interface AirdropInteraction {
   protocol: string;
   status: 'Farming' | 'Snapshot' | 'Claimable';
   lastInteraction: string;
+  lastChecklistReset?: string;
+  isDailyDone?: boolean;
   notes?: string;
 }
 

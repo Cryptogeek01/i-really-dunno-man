@@ -1,20 +1,14 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ExternalLink, Twitter, Github, ChevronRight, Zap, Award, Activity } from 'lucide-react';
-import { Project, GitHubProfile, RegisteredProject } from '../types';
+import { ExternalLink, Twitter, Github, ChevronRight, Zap, Activity } from 'lucide-react';
+import { Project } from '../types';
 
 interface ProjectCardProps {
   project: Project;
-  profile: GitHubProfile | null;
   isActive: boolean;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project, profile, isActive }) => {
-  const isVerified = profile && profile.repos.some(repo => 
-    repo.name.toLowerCase().includes(project.name.toLowerCase()) || 
-    repo.description?.toLowerCase().includes(project.name.toLowerCase())
-  );
-
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, isActive }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,11 +25,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, profile, isAc
           </span>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-2xl font-bold tracking-tight text-white">{project.name}</h3>
-            {isVerified && (
-              <div className="text-accent flex items-center gap-1 text-[9px] font-mono bg-accent/10 px-1.5 py-0.5 rounded border border-accent/20">
-                <Award size={10} /> VERIFIED BUILDER
-              </div>
-            )}
             {isActive && (
               <div className="text-accent flex items-center gap-1 text-[9px] font-mono bg-accent/20 px-1.5 py-0.5 rounded border border-accent/40 animate-pulse">
                 <Activity size={10} /> ACTIVE

@@ -112,10 +112,18 @@ export const LiveOps: React.FC = () => {
                   <div className="text-sm font-bold">{hack.title}</div>
                   <div className="text-[10px] font-mono text-accent">{hack.prize}</div>
                 </div>
-                <div className="flex justify-between items-center text-[10px] text-zinc-500">
+                <div className="flex justify-between items-center text-[10px] text-zinc-500 mb-3">
                   <span>Due: {hack.deadline}</span>
                   <span className="uppercase">{hack.platform}</span>
                 </div>
+                <a 
+                  href={hack.url || "https://dorahacks.io"} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase font-bold flex items-center justify-center gap-2 hover:bg-accent hover:text-black transition-all"
+                >
+                  Open Campaign <ExternalLink size={10} />
+                </a>
               </div>
             ))}
           </div>

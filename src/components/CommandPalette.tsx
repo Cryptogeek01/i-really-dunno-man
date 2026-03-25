@@ -55,7 +55,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
               <Search size={20} className="text-zinc-500 mr-3" />
               <input
                 autoFocus
-                placeholder="Search commands or protocols..."
+                placeholder="Search Builder Hub, The Lab, or Live Ops..."
                 className="bg-transparent border-none outline-none text-lg w-full text-white placeholder:text-zinc-600"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

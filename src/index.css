@@ -3,6 +3,9 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-status-bar-bg: var(--status-bar-bg);
+  --color-accent: var(--accent);
+  --color-ink: var(--ink);
 }
 
 :root {
@@ -22,7 +25,22 @@
   --card-bg: #ffffff;
   --line: #e0e0e0;
   --glass-bg: rgba(255, 255, 255, 0.8);
-  --status-bar-bg: #F5F5F3;
+  --status-bar-bg: #EBEBE9;
+}
+
+/* Ensure all text elements inherit the ink color in light mode if not explicitly colored */
+.light .text-zinc-500, 
+.light .text-zinc-400, 
+.light .text-zinc-600,
+.light .text-zinc-700,
+.light .text-white {
+  color: #1A1A1A !important;
+}
+
+.light .text-zinc-500, 
+.light .text-zinc-400, 
+.light .text-zinc-600 {
+  opacity: 0.7;
 }
 
 body {
